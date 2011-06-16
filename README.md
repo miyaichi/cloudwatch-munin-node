@@ -45,6 +45,15 @@ github の[loggly / loggly-watch](https://github.com/loggly/loggly-watch) から
 +        # print content
 </pre> 
 
-
 cloudwatch-munin-node.py, SimpleClient.py, cloudwatch.py をアプリケーションのディレクトリに配置する。
+
+cloudwatch-munin-node.py の QLIST という配列に munin の metric item の内で必要なものを指定する。
+注意:　CloudWatch は AWS で課金されます。注意深く試して下さい。
+
+cron に指定する
+
+<pre>
+crontab -e
+4-59/5 * * * * /SOME/WHERE/cloudwatch-munin-node.py
+</pre>
 
