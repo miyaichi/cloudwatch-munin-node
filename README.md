@@ -19,7 +19,7 @@ sudo aptitude install munin-plugins-extra
 
 [このサイトから](http://effbot.org/zone/socket-intro.htm) SimpleClient.py という python socket のサンプルソースを作る。
 
-github の[loggly / loggly-watch](https://github.com/loggly/loggly-watch) から、cloudwacth.py を持ってきて、下記のpatchをあてる。
+github の [loggly / loggly-watch](https://github.com/loggly/loggly-watch) から、cloudwacth.py を持ってきて、下記のpatchをあてる。
 
 <pre>
 --- cloudwatch.py.orig	2011-06-16 13:31:38.000000000 +0900
