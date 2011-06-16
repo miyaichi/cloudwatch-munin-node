@@ -3,7 +3,6 @@
 import string
 import getopt
 import urllib
-import httplib2, simplejson
 from SimpleClient import SimpleClient
 import cloudwatch
 
