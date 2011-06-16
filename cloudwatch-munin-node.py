@@ -79,10 +79,8 @@ for mitem in QLIST:
     # checking item unit is SI or binary (has base is 1024 ?) (at this time, not use)
     upperlimit = -1
     mbase = 1000
-    isga = -1
     for mc in mcdict[mitem]:
-        isga = mc.find('graph_args')
-        if isga != -1:
+        if mc.startswith('graph_args'):
             args = mc.split()
             args.remove('graph_args')
             optlist, args = getopt.getopt(args, 'l:u:r', ['base=', 'lower-limit=', 'upper-limit=',
