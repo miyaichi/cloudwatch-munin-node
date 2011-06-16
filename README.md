@@ -6,8 +6,7 @@
 
 munin はお手軽にインストールできて重宝していますが、監視ポイントが多くなると munin-server で RRD 処理やグラフ生成処理の負荷が問題になります。AWS には CloudWatch というサービスがあり、metric data の蓄積・可視化・監視ができます。最近になって、custom metrics といって、ユーザ独自のデータを CloudWatch に put 出来るようになりました。そこで、各 munin-node から直接 CloudWatch にデータを put する事で、munin-server の肩代わりが出来るようになります。
 
-ただし loudWatch は細かなデータタイプや描画の指定ができません。このスクリプトの利用は限定的な metric item は使えるといった程度です。
-
+ただし CloudWatch は細かなデータタイプや描画の指定ができません。このスクリプトの利用は限定的な metric item は使えるといった程度です。
 
 # インストール
 
@@ -48,6 +47,7 @@ github の[loggly / loggly-watch](https://github.com/loggly/loggly-watch) から
 cloudwatch-munin-node.py, SimpleClient.py, cloudwatch.py をアプリケーションのディレクトリに配置する。
 
 cloudwatch-munin-node.py の QLIST という配列に munin の metric item の内で必要なものを指定する。
+
 注意:　CloudWatch は AWS で課金されます。注意深く試して下さい。
 
 cron に指定する
