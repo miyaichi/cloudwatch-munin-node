@@ -1,6 +1,8 @@
 #!/usr/bin/python
 
+import os
 import string
+import pickle
 import getopt
 import urllib
 from SimpleClient import SimpleClient
@@ -14,6 +16,9 @@ AWS_SECRET_ACCESS_KEY = 'YOUR_SECRET_ACCESS_KEY_HERE'
 #QLIST = ['ALL']
 ## If not, you may set individual indiviaul items
 QLIST = [ 'cpu', 'memory' ]
+
+# DERIVE work file
+DERIVEFILE = '/var/tmp/cloudwatch-munin-node.derive'
 
 # Get instance-id from meta-data
 api_ver = '2011-01-01'
@@ -69,6 +74,20 @@ m.writeline('quit')
 # Init connection to cloudwatch
 cw = cloudwatch.connection(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY) 
 
+# Init munin item derive old value dictionary
+moderive = {}
+if not os.path.exists(DERIVEFILE): 
+    fm = open(DERIVEFILE, 'w')
+    pickle.dump(moderive, fm)
+    fm.close()
+
+fm = open(DERIVEFILE)
+moderive = pickle.load(fm)
+fm.close()
+
+# Init munin item derive new value dictionary
+mderive = {}
+
 # Init munin item value summary dictionary
 mvsum = {}
 
@@ -78,6 +97,7 @@ for mitem in QLIST:
     # checking item unit is SI or binary (has base is 1024 ?) (at this time, not use)
     upperlimit = -1
     mbase = 1000
+    isderive = -1
     for mc in mcdict[mitem]:
         if mc.startswith('graph_args'):
             args = mc.split()
@@ -89,13 +109,21 @@ for mitem in QLIST:
                     upperlimit = int(wa)
                 if wo in ('--base'):
                     mbase = int(wa)
+        if mc.endswith('DERIVE'):
+            isderive = 1
                     
     # If is this item value percentage?, then make sum
     if upperlimit != -1:
         mvsum[mitem] = 0.0
         for val in mfdict[mitem]:
             nv = val.split()
-            mvsum[mitem] += float(nv[1])
+            mn = nv[0].split('.')
+            mname = mitem + '_' + mn[0]
+            mval = float(nv[1])
+            if isderive == 1:
+                if mname in moderive:
+                    mval = mval - float(moderive[mname])
+            mvsum[mitem] += mval
             
     # Making data
     mval = 0.0
@@ -105,6 +133,10 @@ for mitem in QLIST:
         mn = nv[0].split('.')
         mname = mitem + '_' + mn[0]
         mval = float(nv[1])
+        if isderive == 1:
+            mderive[mname] = mval
+            if mname in moderive:
+                mval = mval - float(moderive[mname])
         if upperlimit != -1:
             munit = 'Percent'
             mval = (mval * float(upperlimit)) / mvsum[mitem]
@@ -114,3 +146,7 @@ for mitem in QLIST:
         cw.putData('MUNIN', 'InstanceId', instance_id, mname, munit, mval)
 
 
+# store munin item derive value dictionary
+fm = open(DERIVEFILE, 'w')
+pickle.dump(mderive, fm)
+fm.close()
