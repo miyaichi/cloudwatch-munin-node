@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import os
+import time
 import string
 import pickle
 import getopt
@@ -17,8 +18,9 @@ AWS_SECRET_ACCESS_KEY = 'YOUR_SECRET_ACCESS_KEY_HERE'
 ## If not, you may set individual indiviaul items
 QLIST = [ 'cpu', 'memory' ]
 
-# DERIVE work file
-DERIVEFILE = '/var/tmp/cloudwatch-munin-node.derive'
+# RRD work file
+VALUEFILE = '/var/tmp/cloudwatch-munin-node.value'
+TIMEFILE = '/var/tmp/cloudwatch-munin-node.time'
 
 # Get instance-id from meta-data
 api_ver = '2011-01-01'
@@ -74,32 +76,46 @@ m.writeline('quit')
 # Init connection to cloudwatch
 cw = cloudwatch.connection(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY) 
 
-# Init item derive old value dictionary
-moderive = {}
-if not os.path.exists(DERIVEFILE): 
-    fm = open(DERIVEFILE, 'w')
-    pickle.dump(moderive, fm)
+# Init item old value dictionary
+movalue = {}
+if not os.path.exists(VALUEFILE): 
+    fm = open(VALUEFILE, 'w')
+    pickle.dump(movalue, fm)
     fm.close()
 
 # Read old derive value
-fm = open(DERIVEFILE)
-moderive = pickle.load(fm)
+fm = open(VALUEFILE)
+movalue = pickle.load(fm)
 fm.close()
 
-# Init item derive new value dictionary
-mderive = {}
+# Init item new value dictionary
+mnvalue = {}
 
-# Init munin item value summary dictionary
-mvsum = {}
+# Init tiem time dictionary
+motime = {}
+if not os.path.exists(TIMEFILE): 
+    fm = open(TIMEFILE, 'w')
+    pickle.dump(motime, fm)
+    fm.close()
+
+# Read old tim value
+fm = open(TIMEFILE)
+motime = pickle.load(fm)
+fm.close()
+
+# Init item new time dictionary
+mntime = {}
+newtime = time.time()
 
 # Loop
 for mitem in QLIST:
     # checking item is percentage? (has upper-limit ?)
     # checking item unit is SI or binary (has base is 1024 ?) (at this time, not use)
-    # checking item type is DERIVE (value need DELTA)
+    # checking item type GAUGE, DERIVE, COUNTER, ABSOLUTE
     upperlimit = -1
     mbase = 1000
-    isderive = -1
+    munit = 'None'
+    itemtype = 'GAUGE'
     for mc in mcdict[mitem]:
         if mc.startswith('graph_args'):
             args = mc.split()
@@ -109,47 +125,61 @@ for mitem in QLIST:
             for wo, wa in optlist:
                 if wo in ('-u', '--upper-limit'):
                     upperlimit = int(wa)
+                    munit = 'Percent'
                 if wo in ('--base'):
                     mbase = int(wa)
+
+        # redundant? for safe
+        if mc.endswith('ABSOLUTE'):
+            itemtype = 'ABSOLUTE'
+        if mc.endswith('COUNTER'):
+            itemtype = 'COUNTER'
         if mc.endswith('DERIVE'):
-            isderive = 1
-                    
-    # If item value is percentage?, then make sum
-    if upperlimit != -1:
-        mvsum[mitem] = 0.0
-        for val in mfdict[mitem]:
-            nv = val.split()
-            mn = nv[0].split('.')
-            mname = mitem + '_' + mn[0]
-            mval = float(nv[1])
-            # If item type is DERIVE, value is DELTA
-            if isderive == 1:
-                if mname in moderive:
-                    mval = mval - float(moderive[mname])
-            mvsum[mitem] += mval
-            
+            itemtype = 'DERIVE'
+
     # Making data
     mval = 0.0
-    munit = 'None'
+    mwval = 0.0
+    mwtime = 0.0
     for val in mfdict[mitem]:
         nv = val.split()
         mn = nv[0].split('.')
         mname = mitem + '_' + mn[0]
-        mval = float(nv[1])
-        if isderive == 1:
-            mderive[mname] = mval
-            if mname in moderive:
-                mval = mval - float(moderive[mname])
-        if upperlimit != -1:
-            munit = 'Percent'
-            mval = (mval * float(upperlimit)) / mvsum[mitem]
-
+        if nv[1] != 'U':
+            mval = float(nv[1])
+        if itemtype != 'GAUGE':
+            mnvalue[mname] = mval
+            mntime[mname] = newtime
+            if mname in movalue and mname in motime:
+                mwval = mval - float(movalue[mname])
+                mwtime = newtime - float(motime[mname])
+                mwwidth = 0.0
+                if itemtype == 'COUNTER':
+                    if float(movalue[mname]) < 4294967296.0:
+                        # width 32bit
+                        mwwidth = 4294967296.0
+                    else:
+                        # width 64bit
+                        mwwidth = 18446744073709551615.0
+                if mwtime > 0.0 and mval > 0.0:
+                    if itemtype == 'ABSOLUTE':
+                        mwval = mval
+                    mval = (mwwidth + mwval) / mwtime
+            else:
+                # missing old data?
+                mval = 0.0
+                        
         # Put cloudwatch
-        #print 'InstanceId:', instance_id, 'MetricName: ', mname, 'Unit: ', munit, 'Value: ', str(mval)
+        #print 'InstanceId:', instance_id, 'MetricName: ', mname, 'Unit: ', munit, 'Value: ', str(mval), 'Type: ', itemtype
         cw.putData('MUNIN', 'InstanceId', instance_id, mname, munit, mval)
 
 
-# Store item derive value dictionary
-fm = open(DERIVEFILE, 'w')
-pickle.dump(mderive, fm)
+# Store item new value dictionary
+fm = open(VALUEFILE, 'w')
+pickle.dump(mnvalue, fm)
+fm.close()
+
+# Store item new time dictionary
+fm = open(TIMEFILE, 'w')
+pickle.dump(mntime, fm)
 fm.close()
