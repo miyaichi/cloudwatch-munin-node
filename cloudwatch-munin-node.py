@@ -107,15 +107,17 @@ fm.close()
 mntime = {}
 newtime = time.time()
 
+# Init item data type dictionary
+mdtype = {}
+
 # Loop
 for mitem in QLIST:
-    # checking item is percentage? (has upper-limit ?)
-    # checking item unit is SI or binary (has base is 1024 ?) (at this time, not use)
-    # checking item type GAUGE, DERIVE, COUNTER, ABSOLUTE
+    # checking item is percentage? (has upper-limit ?) (at this time, variable is not used)
+    # checking item unit is SI or binary (has base is 1024 ?) (at this time, variable is not used)
+    # (will store StatisticValues StatisticSet)
     upperlimit = -1
     mbase = 1000
     munit = 'None'
-    itemtype = 'GAUGE'
     for mc in mcdict[mitem]:
         if mc.startswith('graph_args'):
             args = mc.split()
@@ -129,13 +131,12 @@ for mitem in QLIST:
                 if wo in ('--base'):
                     mbase = int(wa)
 
-        # redundant? for safe
-        if mc.endswith('ABSOLUTE'):
-            itemtype = 'ABSOLUTE'
-        if mc.endswith('COUNTER'):
-            itemtype = 'COUNTER'
-        if mc.endswith('DERIVE'):
-            itemtype = 'DERIVE'
+        # checking item type GAUGE, DERIVE, COUNTER, ABSOLUTE
+        mconfig = mc.split()
+        if mconfig[0].endswith('.type'):
+            mcname = mconfig[0].split('.')
+            mname = mitem + '_' + mcname[0]
+            mdtype[mname] = mconfig[1]
 
     # Making data
     mval = 0.0
@@ -145,6 +146,9 @@ for mitem in QLIST:
         nv = val.split()
         mn = nv[0].split('.')
         mname = mitem + '_' + mn[0]
+        itemtype = 'GAUGE'
+        if mname in mdtype:
+            itemtype = mdtype[mname]
         if nv[1] != 'U':
             mval = float(nv[1])
         if itemtype != 'GAUGE':
