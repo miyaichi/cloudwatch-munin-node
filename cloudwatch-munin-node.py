@@ -18,7 +18,7 @@ AWS_SECRET_ACCESS_KEY = 'YOUR_SECRET_ACCESS_KEY_HERE'
 ## If not, you may set individual indiviaul items
 QLIST = [ 'cpu', 'memory' ]
 
-# RRD work file
+# DATA TYPE work file
 VALUEFILE = '/var/tmp/cloudwatch-munin-node.value'
 TIMEFILE = '/var/tmp/cloudwatch-munin-node.time'
 
@@ -30,7 +30,7 @@ instance_id = urllib.urlopen('%s/instance-id/' % base_url).read()
 # Open local munin-node
 m = SimpleClient('localhost', 4949)
 
-# check node names (at this time, not use)
+# check node names (at this time, variable is not used)
 nodename = []
 m.writeline('nodes')
 while True:
@@ -91,7 +91,7 @@ fm.close()
 # Init item new value dictionary
 mnvalue = {}
 
-# Init tiem time dictionary
+# Init tiem old time dictionary
 motime = {}
 if not os.path.exists(TIMEFILE): 
     fm = open(TIMEFILE, 'w')
@@ -139,10 +139,10 @@ for mitem in QLIST:
             mdtype[mname] = mconfig[1]
 
     # Making data
-    mval = 0.0
     mwval = 0.0
     mwtime = 0.0
     for val in mfdict[mitem]:
+        mval = 0.0
         nv = val.split()
         mn = nv[0].split('.')
         mname = mitem + '_' + mn[0]
@@ -170,7 +170,7 @@ for mitem in QLIST:
                         mwval = mval
                     mval = (mwwidth + mwval) / mwtime
             else:
-                # missing old data?
+                # missing old data? or first time?
                 mval = 0.0
                         
         # Put cloudwatch
