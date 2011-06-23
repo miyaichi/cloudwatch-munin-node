@@ -153,15 +153,17 @@ for mitem in QLIST:
         if itemtype != 'GAUGE':
             mnvalue[mname] = mval
             if mname in movalue and mwtime > 0.0:
-                mwval = mval - float(movalue[mname])
+                moval = float(movalue[mname])
+                mwval = mval - moval
                 mwwidth = 0.0
                 if itemtype == 'COUNTER':
-                    if float(movalue[mname]) < 4294967296.0:
-                        # width 32bit
-                        mwwidth = 4294967296.0
-                    else:
-                        # width 64bit
-                        mwwidth = 18446744073709551615.0
+                    if mwval < 0.0:
+                        if moval < 4294967296.0:
+                            # width 32bit
+                            mwwidth = 4294967296.0
+                        else:
+                            # width 64bit
+                            mwwidth = 18446744073709551615.0
                 if mval > 0.0:
                     if itemtype == 'ABSOLUTE':
                         mwval = mval
