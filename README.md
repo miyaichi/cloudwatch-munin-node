@@ -8,7 +8,7 @@ munin はお手軽にインストールできて重宝していますが、監�
 
 ただし CloudWatch は細かなデータタイプや描画の指定ができません。このスクリプトの利用は限定的な metric item には使えるといった程度です。
 
-(BUG) DATA TYPE (GAUGE, DERIVE, COUNTER, ABSOLUTE)の理解と扱いが出来てなかったので、なんちゃってで対応
+(BUG) DATA TYPE (GAUGE, DERIVE, COUNTER, ABSOLUTE)の理解と扱いが出来てなかったので、なんちゃってで対応。cdef, negative とかはまだ未実装
 
 # インストール
 
