@@ -2,7 +2,6 @@
 
 import os
 import time
-import string
 import pickle
 import getopt
 import urllib
@@ -33,12 +32,12 @@ m = SimpleClient('localhost', 4949)
 nodename = []
 m.writeline('nodes')
 while True:
-    line = m.readline()
-    if not line:
+    l = m.readline()
+    if not l:
         break
-    if line.startswith('.'):
+    if l.startswith('.'):
         break
-    nodename.append(line.rstrip())
+    nodename.append(l.rstrip())
 
 # Get all query-items
 if QLIST[0] == 'ALL':
@@ -52,22 +51,22 @@ for item in QLIST:
     mcdict[item] = []
     m.writeline('config' + item)
     while True:
-        line = m.readline()
-        if not line:
+        l = m.readline()
+        if not l:
             break
-        if line.startswith('.'):
+        if l.startswith('.'):
             break
-        mcdict[item].append(line.rstrip())
+        mcdict[item].append(l.rstrip())
 
     mfdict[item] = []
     m.writeline('fetch' + item)
     while True:
-        line = m.readline()
-        if not line:
+        l = m.readline()
+        if not l:
             break
-        if line.startswith('.'):
+        if l.startswith('.'):
             break
-        mfdict[item].append(line.rstrip())
+        mfdict[item].append(l.rstrip())
 
 # Close munin-node
 m.writeline('quit')
@@ -78,14 +77,14 @@ cw = cloudwatch.connection(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
 # Init item old value dictionary
 movalue = {}
 if not os.path.exists(STATEFILE):
-    fm = open(STATEFILE, 'w')
-    pickle.dump(movalue, fm)
-    fm.close()
+    f = open(STATEFILE, 'w')
+    pickle.dump(movalue, f)
+    f.close()
 
 # Read old derive value
-fm = open(STATEFILE)
-movalue = pickle.load(fm)
-fm.close()
+f = open(STATEFILE)
+movalue = pickle.load(f)
+f.close()
 
 # Init item new value dictionary
 mnvalue = {}
@@ -153,23 +152,24 @@ for mitem in QLIST:
         if itemtype != 'GAUGE':
             mnvalue[mname] = mval
             if mname in movalue and mwtime > 0.0:
-                moval = float(movalue[mname])
-                mwval = mval - moval
-                mwwidth = 0.0
-                if itemtype == 'COUNTER':
-                    if mwval < 0.0:
-                        if moval < 4294967296.0:
-                            # width 32bit
-                            mwwidth = 4294967296.0
-                        else:
-                            # width 64bit
-                            mwwidth = 18446744073709551615.0
-                if mval > 0.0:
-                    if itemtype == 'ABSOLUTE':
-                        mwval = mval
-                    mval = (mwwidth + mwval) / mwtime
+                if itemtype == 'ABSOLUTE':
+                    mwval = mval
+                else:
+                    # itemtype is 'DERIVE' or 'COUNTER'
+                    moval = float(movalue[mname])
+                    mwval = mval - moval
+                    if itemtype == 'COUNTER':
+                        if mwval < 0.0:
+                            if moval < 4294967296.0:
+                                # width 32bit
+                                mwval += 4294967296.0
+                            else:
+                                # width 64bit
+                                mwval += 18446744073709551615.0
+                # Calc rate
+                mval = mwval / mwtime
             else:
-                # missing old data? or first time?
+                # missing old data? or first time? value is 'U', force set 0.0
                 mval = 0.0
                         
         # Put cloudwatch
@@ -178,6 +178,6 @@ for mitem in QLIST:
 
 
 # Store item new value dictionary
-fm = open(STATEFILE, 'w')
-pickle.dump(mnvalue, fm)
-fm.close()
+f = open(STATEFILE, 'w')
+pickle.dump(mnvalue, f)
+f.close()
