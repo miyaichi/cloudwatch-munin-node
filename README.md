@@ -11,7 +11,7 @@ munin はお手軽にインストールできて重宝していますが、監�
 ## BUG
 単位(Unit)は基本'None'で。upper-limit があれば 'Percent'。それ以外の判定は未実装。
 
-cdef とかは未実装
+cdef とかは未実装。
 
 # インストール
 
@@ -72,7 +72,7 @@ CloudWatch の Policy のサンプル
 }
 </pre>
 
-* cron に指定する
+* cron に指定する。
 
 <pre>
 crontab -e
