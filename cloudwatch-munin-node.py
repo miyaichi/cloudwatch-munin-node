@@ -19,8 +19,7 @@ AWS_SECRET_ACCESS_KEY = 'YOUR_SECRET_ACCESS_KEY_HERE'
 QLIST = [ 'cpu', 'memory' ]
 
 # DATA TYPE work file
-VALUEFILE = '/var/tmp/cloudwatch-munin-node.value'
-TIMEFILE = '/var/tmp/cloudwatch-munin-node.time'
+STATEFILE = '/var/tmp/cloudwatch-munin-node.state'
 
 # Get instance-id from meta-data
 api_ver = '2011-01-01'
@@ -78,44 +77,39 @@ cw = cloudwatch.connection(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
 
 # Init item old value dictionary
 movalue = {}
-if not os.path.exists(VALUEFILE): 
-    fm = open(VALUEFILE, 'w')
+if not os.path.exists(STATEFILE):
+    fm = open(STATEFILE, 'w')
     pickle.dump(movalue, fm)
     fm.close()
 
 # Read old derive value
-fm = open(VALUEFILE)
+fm = open(STATEFILE)
 movalue = pickle.load(fm)
 fm.close()
 
 # Init item new value dictionary
 mnvalue = {}
 
-# Init tiem old time dictionary
-motime = {}
-if not os.path.exists(TIMEFILE): 
-    fm = open(TIMEFILE, 'w')
-    pickle.dump(motime, fm)
-    fm.close()
-
-# Read old tim value
-fm = open(TIMEFILE)
-motime = pickle.load(fm)
-fm.close()
-
-# Init item new time dictionary
-mntime = {}
+# Set Time
 newtime = time.time()
+oldtime = newtime
+mnvalue['cwfetchtime'] = newtime
+mwtime = 0.0
+if 'cwfetchtime' in movalue:
+    oldtime = movalue['cwfetchtime']
+    mwtime = newtime - oldtime
 
 # Init item data type dictionary
 mdtype = {}
 
 # Loop
 for mitem in QLIST:
-    # checking item is percentage? (has upper-limit ?) (at this time, variable is not used)
+    # checking item upper-limit (is percentage? (at this time, variable is not used)
+    # checking item lower-limit (at this time, variable is not used)
     # checking item unit is SI or binary (has base is 1024 ?) (at this time, variable is not used)
-    # (will store StatisticValues StatisticSet)
+    # checking item type GAUGE, DERIVE, COUNTER, ABSOLUTE
     upperlimit = -1
+    lowerlimit = -1
     mbase = 1000
     munit = 'None'
     for mc in mcdict[mitem]:
@@ -126,12 +120,18 @@ for mitem in QLIST:
                                                           'logarithmic', 'rigid', 'units-exponent='])
             for wo, wa in optlist:
                 if wo in ('-u', '--upper-limit'):
-                    upperlimit = int(wa)
+                    # some plugins has bug
+                    ws = wa.rstrip(';')
+                    upperlimit = int(ws)
                     munit = 'Percent'
+                if wo in ('-l', '--lower-limit'):
+                    ws = wa.rstrip(';')
+                    lowerlimit = int(ws)
                 if wo in ('--base'):
-                    mbase = int(wa)
+                    ws = wa.rstrip(';')
+                    mbase = int(ws)
 
-        # checking item type GAUGE, DERIVE, COUNTER, ABSOLUTE
+        # Set tiem data type GAUGE, DERIVE, COUNTER, ABSOLUTE
         mconfig = mc.split()
         if mconfig[0].endswith('.type'):
             mcname = mconfig[0].split('.')
@@ -140,7 +140,6 @@ for mitem in QLIST:
 
     # Making data
     mwval = 0.0
-    mwtime = 0.0
     for val in mfdict[mitem]:
         mval = 0.0
         nv = val.split()
@@ -153,10 +152,8 @@ for mitem in QLIST:
             mval = float(nv[1])
         if itemtype != 'GAUGE':
             mnvalue[mname] = mval
-            mntime[mname] = newtime
-            if mname in movalue and mname in motime:
+            if mname in movalue and mwtime > 0.0:
                 mwval = mval - float(movalue[mname])
-                mwtime = newtime - float(motime[mname])
                 mwwidth = 0.0
                 if itemtype == 'COUNTER':
                     if float(movalue[mname]) < 4294967296.0:
@@ -165,7 +162,7 @@ for mitem in QLIST:
                     else:
                         # width 64bit
                         mwwidth = 18446744073709551615.0
-                if mwtime > 0.0 and mval > 0.0:
+                if mval > 0.0:
                     if itemtype == 'ABSOLUTE':
                         mwval = mval
                     mval = (mwwidth + mwval) / mwtime
@@ -179,11 +176,6 @@ for mitem in QLIST:
 
 
 # Store item new value dictionary
-fm = open(VALUEFILE, 'w')
+fm = open(STATEFILE, 'w')
 pickle.dump(mnvalue, fm)
-fm.close()
-
-# Store item new time dictionary
-fm = open(TIMEFILE, 'w')
-pickle.dump(mntime, fm)
 fm.close()
