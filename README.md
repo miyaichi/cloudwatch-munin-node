@@ -2,26 +2,28 @@
 
 ふとした思い付きで、munin-node から直接 AWS CloudWatch の custom metrics に持って行けたら便利かもしれずと、勉強がてらに作成してみました。
 
-## 利用シーン
+## モチベーション
 
 munin はお手軽にインストールできて重宝していますが、監視ポイントが多くなると munin-server で RRD 処理やグラフ生成処理の負荷が問題になります。AWS には CloudWatch というサービスがあり、metric data の蓄積・可視化・監視ができます。最近になって、custom metrics といって、ユーザ独自のデータを CloudWatch に put 出来るようになりました。そこで、各 munin-node から直接 CloudWatch にデータを put する事で、munin-server の肩代わりが出来るようになります。
 
 ただし CloudWatch は細かなデータタイプや描画の指定ができません。このスクリプトの利用は限定的な metric item には使えるといった程度です。
 
-(BUG) DATA TYPE (GAUGE, DERIVE, COUNTER, ABSOLUTE)の理解と扱いが出来てなかったので、なんちゃってで対応。cdef とかは未実装
+## BUG
+単位(Unit)は基本'None'で。upper-limit があれば 'Percent'。それ以外の判定は未実装
+cdef とかは未実装
 
 # インストール
 
-munin-node を導入する。
+1. munin-node を導入する。
 
 <pre>
 sudo aptitude install munin-node
 sudo aptitude install munin-plugins-extra
 </pre>
 
-[このサイトから](http://effbot.org/zone/socket-intro.htm) SimpleClient.py という python socket のサンプルソースを作る。
+2. [このサイトから](http://effbot.org/zone/socket-intro.htm) SimpleClient.py という python socket のサンプルソースを作る。
 
-github の [loggly / loggly-watch](https://github.com/loggly/loggly-watch) から、cloudwacth.py を持ってきて、下記のpatchをあてる。
+3. github の [loggly / loggly-watch](https://github.com/loggly/loggly-watch) から、cloudwacth.py を持ってきて、下記のpatchをあてる。
 
 <pre>
 --- cloudwatch.py.orig	2011-06-16 13:31:38.000000000 +0900
@@ -46,13 +48,29 @@ github の [loggly / loggly-watch](https://github.com/loggly/loggly-watch) か�
 +        # print content
 </pre> 
 
-cloudwatch-munin-node.py, SimpleClient.py, cloudwatch.py をアプリケーションのディレクトリに配置する。
+4. cloudwatch-munin-node.py, SimpleClient.py, cloudwatch.py をアプリケーションのディレクトリに配置する。
 
-cloudwatch-munin-node.py の QLIST という配列に munin の metric item の内で必要なものを指定する。
+5. cloudwatch-munin-node.py の QLIST という配列に munin の metric item の内で必要なものを指定する。
 
 注意:　CloudWatch は AWS で課金されます。注意深く試して下さい。
 
-cron に指定する
+6. AWS_ACCESS_KEY_ID に'AWS Access Key ID'を AWS_SECRET_ACCESS_KEY に 'AWS Secret Access Key' を記述します。
+IAM を使えば(比較的)安全になります。
+
+CloudWatch の Policy のサンプル
+<pre>
+{
+  "Statement": [
+    {
+      "Action": "cloudwatch:*",
+      "Effect": "Allow",
+      "Resource": "*"
+    }
+  ]
+}
+</pre>
+
+7. cron に指定する
 
 <pre>
 crontab -e
