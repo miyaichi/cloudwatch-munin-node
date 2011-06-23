@@ -14,16 +14,16 @@ cdef とかは未実装
 
 # インストール
 
-1. munin-node を導入する。
+* munin-node を導入する。
 
 <pre>
 sudo aptitude install munin-node
 sudo aptitude install munin-plugins-extra
 </pre>
 
-2. [このサイトから](http://effbot.org/zone/socket-intro.htm) SimpleClient.py という python socket のサンプルソースを作る。
+* [このサイトから](http://effbot.org/zone/socket-intro.htm) SimpleClient.py という python socket のサンプルソースを作る。
 
-3. github の [loggly / loggly-watch](https://github.com/loggly/loggly-watch) から、cloudwacth.py を持ってきて、下記のpatchをあてる。
+* github の [loggly / loggly-watch](https://github.com/loggly/loggly-watch) から、cloudwacth.py を持ってきて、下記のpatchをあてる。
 
 <pre>
 --- cloudwatch.py.orig	2011-06-16 13:31:38.000000000 +0900
@@ -48,13 +48,13 @@ sudo aptitude install munin-plugins-extra
 +        # print content
 </pre> 
 
-4. cloudwatch-munin-node.py, SimpleClient.py, cloudwatch.py をアプリケーションのディレクトリに配置する。
+* cloudwatch-munin-node.py, SimpleClient.py, cloudwatch.py をアプリケーションのディレクトリに配置する。
 
-5. cloudwatch-munin-node.py の QLIST という配列に munin の metric item の内で必要なものを指定する。
+* cloudwatch-munin-node.py の QLIST という配列に munin の metric item の内で必要なものを指定する。
 
 注意:　CloudWatch は AWS で課金されます。注意深く試して下さい。
 
-6. AWS_ACCESS_KEY_ID に'AWS Access Key ID'を AWS_SECRET_ACCESS_KEY に 'AWS Secret Access Key' を記述します。
+* AWS_ACCESS_KEY_ID に'AWS Access Key ID'を AWS_SECRET_ACCESS_KEY に 'AWS Secret Access Key' を記述します。
 IAM を使えば(比較的)安全になります。
 
 CloudWatch の Policy のサンプル
@@ -70,7 +70,7 @@ CloudWatch の Policy のサンプル
 }
 </pre>
 
-7. cron に指定する
+* cron に指定する
 
 <pre>
 crontab -e
