@@ -9,7 +9,8 @@ munin はお手軽にインストールできて重宝していますが、監�
 ただし CloudWatch は細かなデータタイプや描画の指定ができません。このスクリプトの利用は限定的な metric item には使えるといった程度です。
 
 ## BUG
-単位(Unit)は基本'None'で。upper-limit があれば 'Percent'。それ以外の判定は未実装
+単位(Unit)は基本'None'で。upper-limit があれば 'Percent'。それ以外の判定は未実装。
+
 cdef とかは未実装
 
 # インストール
@@ -55,6 +56,7 @@ sudo aptitude install munin-plugins-extra
 注意:　CloudWatch は AWS で課金されます。注意深く試して下さい。
 
 * AWS_ACCESS_KEY_ID に'AWS Access Key ID'を AWS_SECRET_ACCESS_KEY に 'AWS Secret Access Key' を記述します。
+
 IAM を使えば(比較的)安全になります。
 
 CloudWatch の Policy のサンプル
