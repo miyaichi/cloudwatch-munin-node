@@ -101,6 +101,9 @@ if 'cwfetchtime' in movalue:
 # Init item data type dictionary
 mdtype = {}
 
+# Init item cdef dictionary
+mcdef = {}
+
 # Loop
 for mitem in QLIST:
     # checking item upper-limit (is percentage? (at this time, variable is not used)
@@ -133,9 +136,17 @@ for mitem in QLIST:
         # Set tiem data type GAUGE, DERIVE, COUNTER, ABSOLUTE
         mconfig = mc.split()
         if mconfig[0].endswith('.type'):
-            mcname = mconfig[0].split('.')
-            mname = mitem + '_' + mcname[0]
+            mcdata = mconfig[0].split('.')
+            mname = mitem + '_' + mcdata[0]
             mdtype[mname] = mconfig[1]
+
+        # tiem has cdef?
+        mconfig = mc.split()
+        if mconfig[0].endswith('.cdef'):
+            mcdata = mconfig[0].split('.')
+            mname = mitem + '_' + mcdata[0]
+            mwcdef = mconfig[1].split(',')
+            mcdef[mname] = mwcdef
 
     # Making data
     mwval = 0.0
@@ -171,7 +182,21 @@ for mitem in QLIST:
             else:
                 # missing old data? or first time? value is 'U', force set 0.0
                 mval = 0.0
-                        
+
+        # If item has cdef?
+        if mname in mcdef:
+            mcval = float(mcdef[mname][1])
+            mcope = mcdef[mname][2]
+            if mcval != 0.0:
+                if mcope == '+':
+                    mval = mval + mcval
+                elif mcope == '-':
+                    mval = mval - mcval
+                elif mcope == '*':
+                    mval = mval * mcval
+                elif mcope == '/':
+                    mval = mval / mcval
+
         # Put cloudwatch
         #print 'InstanceId:', instance_id, 'MetricName: ', mname, 'Unit: ', munit, 'Value: ', str(mval), 'Type: ', itemtype
         cw.putData('MUNIN', 'InstanceId', instance_id, mname, munit, mval)
