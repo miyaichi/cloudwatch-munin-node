@@ -141,12 +141,10 @@ for mitem in QLIST:
             mdtype[mname] = mconfig[1]
 
         # tiem has cdef?
-        mconfig = mc.split()
         if mconfig[0].endswith('.cdef'):
             mcdata = mconfig[0].split('.')
             mname = mitem + '_' + mcdata[0]
-            mwcdef = mconfig[1].split(',')
-            mcdef[mname] = mwcdef
+            mcdef[mname] = mconfig[1].split(',')
 
     # Making data
     mwval = 0.0
