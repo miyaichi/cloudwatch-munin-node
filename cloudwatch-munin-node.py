@@ -133,14 +133,15 @@ for mitem in QLIST:
                     ws = wa.rstrip(';')
                     mbase = int(ws)
 
-        # Set tiem data type GAUGE, DERIVE, COUNTER, ABSOLUTE
+        # config check
+        # Has item data type? (GAUGE, DERIVE, COUNTER, ABSOLUTE)
         mconfig = mc.split()
         if mconfig[0].endswith('.type'):
             mcdata = mconfig[0].split('.')
             mname = mitem + '_' + mcdata[0]
             mdtype[mname] = mconfig[1]
 
-        # tiem has cdef?
+        # Has item cdef?
         if mconfig[0].endswith('.cdef'):
             mcdata = mconfig[0].split('.')
             mname = mitem + '_' + mcdata[0]
