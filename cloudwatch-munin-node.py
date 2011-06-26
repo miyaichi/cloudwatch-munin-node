@@ -184,7 +184,11 @@ for mitem in QLIST:
 
         # If item has cdef?
         if mname in mcdef:
-            mcval = float(mcdef[mname][1])
+            # This is ad hoc patch, multiple RPN cannot process (ex. 'cache_hit,client_req,/,100,*')
+            try:
+                mcval = float(mcdef[mname][1])
+            except:
+                mcval = 0.0
             mcope = mcdef[mname][2]
             if mcval != 0.0:
                 if mcope == '+':
