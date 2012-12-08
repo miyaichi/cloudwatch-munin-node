@@ -158,7 +158,10 @@ for mitem in QLIST:
         if mname in mdtype:
             itemtype = mdtype[mname]
         if nv[1] != 'U':
-            mval = float(nv[1])
+            try:
+                mval = float(nv[1])
+            except:
+                mval = 0.0
         if itemtype != 'GAUGE':
             mnvalue[mname] = mval
             if mname in movalue and mwtime > 0.0:
